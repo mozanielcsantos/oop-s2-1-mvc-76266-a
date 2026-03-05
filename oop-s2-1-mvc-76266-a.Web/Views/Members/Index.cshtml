@@ -1,0 +1,35 @@
+@using System.Linq
+@model IEnumerable<Library.Domain.Entities.Member>
+
+@{
+    ViewData["Title"] = "Members";
+}
+
+<h2>Members</h2>
+
+@if (Model == null || !Model.Any())
+{
+    <p>No members found.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Joined On</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var m in Model)
+        {
+            <tr>
+                <td>@m.FullName</td>
+                <td>@m.Email</td>
+                <td>@m.JoinedOn.ToString("yyyy-MM-dd")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}

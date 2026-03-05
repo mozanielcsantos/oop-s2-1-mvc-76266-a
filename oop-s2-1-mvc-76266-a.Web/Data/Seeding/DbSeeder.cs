@@ -1,6 +1,7 @@
 using Bogus;
 using Library.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using OopS21Mvc76266A.Web.Data;
 
 namespace OopS21Mvc76266A.Web.Data.Seeding;
 

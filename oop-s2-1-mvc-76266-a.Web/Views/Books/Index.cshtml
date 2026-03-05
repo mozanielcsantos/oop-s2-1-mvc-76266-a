@@ -1,0 +1,69 @@
+@model IEnumerable<Library.Domain.Entities.Book>
+
+@{
+    ViewData["Title"] = "Books";
+}
+
+<h2>Books</h2>
+
+<form method="get">
+    <div>
+        Title:
+        <input type="text" name="searchTitle" value="@Context.Request.Query["searchTitle"]" />
+
+        Author:
+        <input type="text" name="searchAuthor" value="@Context.Request.Query["searchAuthor"]" />
+
+        Availability:
+        <select name="availability">
+            <option value="">All</option>
+            <option value="available" selected="@(Context.Request.Query["availability"] == "available")">Available</option>
+            <option value="onloan" selected="@(Context.Request.Query["availability"] == "onloan")">On Loan</option>
+        </select>
+
+        <button type="submit">Search</button>
+        <a href="/books">Reset</a>
+    </div>
+</form>
+
+<br />
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>
+            <a href="/books?sortOrder=title">Title</a>
+        </th>
+        <th>
+            <a href="/books?sortOrder=author">Author</a>
+        </th>
+        <th>ISBN</th>
+        <th>Year</th>
+        <th>Status</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    @foreach (var book in Model)
+    {
+        var onLoan = book.Loans.Any(l => l.ReturnDate == null);
+
+        <tr>
+            <td>@book.Title</td>
+            <td>@book.Author</td>
+            <td>@book.Isbn</td>
+            <td>@book.PublishedYear</td>
+            <td>
+                @if (onLoan)
+                {
+                    <span style="color:red;">On Loan</span>
+                }
+                else
+                {
+                    <span style="color:green;">Available</span>
+                }
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

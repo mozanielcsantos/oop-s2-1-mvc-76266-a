@@ -1,0 +1,71 @@
+@model IEnumerable<oop_s2_1_mvc_76266_a.Web.Models.LoanListItemVm>
+
+@{
+    ViewData["Title"] = "Loans";
+    var status = (ViewData["Status"] as string) ?? "all";
+}
+
+<h2>Loans</h2>
+
+<form method="get" class="mb-3">
+    <label for="status">Status:</label>
+    <select id="status" name="status">
+        <option value="all" selected="@(status == "all")">All</option>
+        <option value="active" selected="@(status == "active")">Active (not returned)</option>
+        <option value="returned" selected="@(status == "returned")">Returned</option>
+        <option value="overdue" selected="@(status == "overdue")">Overdue</option>
+    </select>
+
+    <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+    <a class="btn btn-link btn-sm" href="/Loans">Reset</a>
+</form>
+
+@if (!Model.Any())
+{
+    <p>No loans found.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Book</th>
+            <th>ISBN</th>
+            <th>Member</th>
+            <th>Email</th>
+            <th>Loan Date</th>
+            <th>Due Date</th>
+            <th>Return Date</th>
+            <th>Status</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var l in Model)
+        {
+            <tr>
+                <td>@l.BookTitle</td>
+                <td>@l.BookIsbn</td>
+                <td>@l.MemberFullName</td>
+                <td>@l.MemberEmail</td>
+                <td>@l.LoanDate.ToString("yyyy-MM-dd")</td>
+                <td>@l.DueDate.ToString("yyyy-MM-dd")</td>
+                <td>@(l.ReturnDate.HasValue ? l.ReturnDate.Value.ToString("yyyy-MM-dd") : "-")</td>
+                <td>
+                    @if (l.IsReturned)
+                    {
+                        <span style="color: green; font-weight: 600;">Returned</span>
+                    }
+                    else if (l.IsOverdue)
+                    {
+                        <span style="color: red; font-weight: 600;">Overdue</span>
+                    }
+                    else
+                    {
+                        <span style="color: orange; font-weight: 600;">On Loan</span>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
