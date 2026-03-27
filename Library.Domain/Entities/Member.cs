@@ -1,13 +1,21 @@
-namespace Library.Domain.Entities;
+using System.ComponentModel.DataAnnotations;
 
-public class Member
+namespace Library.Domain.Entities
 {
-    public int Id { get; set; }
+    public class Member
+    {
+        public int Id { get; set; }
 
-    public string FullName { get; set; } = "";
-    public string Email { get; set; } = "";
-    public DateTime JoinedOn { get; set; } = DateTime.UtcNow;
+        [Required]
+        public string FullName { get; set; } = string.Empty;
 
-    // Navigation
-    public ICollection<Loan> Loans { get; set; } = new List<Loan>();
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        public string Phone { get; set; } = string.Empty;
+
+        public ICollection<Loan> Loans { get; set; } = new List<Loan>();
+    }
 }

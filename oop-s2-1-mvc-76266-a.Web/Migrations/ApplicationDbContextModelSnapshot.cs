@@ -3,11 +3,11 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using OopS21Mvc76266A.Web.Data;
+using oop_s2_1_mvc_76266_a.Web.Data;
 
 #nullable disable
 
-namespace oop_s2_1_mvc_76266_a.Web.Migrations
+namespace oops21mvc76266a.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     partial class ApplicationDbContextModelSnapshot : ModelSnapshot
@@ -25,20 +25,21 @@ namespace oop_s2_1_mvc_76266_a.Web.Migrations
 
                     b.Property<string>("Author")
                         .IsRequired()
-                        .HasMaxLength(150)
                         .HasColumnType("TEXT");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Isbn")
                         .IsRequired()
-                        .HasMaxLength(20)
                         .HasColumnType("TEXT");
-
-                    b.Property<int>("PublishedYear")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -67,7 +68,7 @@ namespace oop_s2_1_mvc_76266_a.Web.Migrations
                     b.Property<int>("MemberId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime?>("ReturnDate")
+                    b.Property<DateTime?>("ReturnedDate")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -87,15 +88,14 @@ namespace oop_s2_1_mvc_76266_a.Web.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FullName")
                         .IsRequired()
-                        .HasMaxLength(150)
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("JoinedOn")
+                    b.Property<string>("Phone")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");

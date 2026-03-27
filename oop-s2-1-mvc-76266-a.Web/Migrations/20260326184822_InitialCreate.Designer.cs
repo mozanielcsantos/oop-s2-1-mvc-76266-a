@@ -4,21 +4,110 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using OopS21Mvc76266A.Web.Data;
+using oop_s2_1_mvc_76266_a.Web.Data;
 
 #nullable disable
 
-namespace oop_s2_1_mvc_76266_a.Web.Migrations
+namespace oops21mvc76266a.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260304182402_CreateIdentitySchema")]
-    partial class CreateIdentitySchema
+    [Migration("20260326184822_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
+
+            modelBuilder.Entity("Library.Domain.Entities.Book", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Author")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Isbn")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Isbn")
+                        .IsUnique();
+
+                    b.ToTable("Books");
+                });
+
+            modelBuilder.Entity("Library.Domain.Entities.Loan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("BookId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("DueDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LoanDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("MemberId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ReturnedDate")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookId");
+
+                    b.HasIndex("MemberId");
+
+                    b.ToTable("Loans");
+                });
+
+            modelBuilder.Entity("Library.Domain.Entities.Member", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("Members");
+                });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -216,6 +305,25 @@ namespace oop_s2_1_mvc_76266_a.Web.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Library.Domain.Entities.Loan", b =>
+                {
+                    b.HasOne("Library.Domain.Entities.Book", "Book")
+                        .WithMany("Loans")
+                        .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Library.Domain.Entities.Member", "Member")
+                        .WithMany("Loans")
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Book");
+
+                    b.Navigation("Member");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -265,6 +373,16 @@ namespace oop_s2_1_mvc_76266_a.Web.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Library.Domain.Entities.Book", b =>
+                {
+                    b.Navigation("Loans");
+                });
+
+            modelBuilder.Entity("Library.Domain.Entities.Member", b =>
+                {
+                    b.Navigation("Loans");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,0 +1,60 @@
+@model IEnumerable<Microsoft.AspNetCore.Identity.IdentityRole>
+
+@{
+    ViewData["Title"] = "Role Management";
+}
+
+<h1 class="mb-4">Admin Role Management</h1>
+
+<div class="card shadow-sm p-4 mb-4">
+    <h4 class="mb-3">Create New Role</h4>
+    <form asp-action="Create" method="post" class="row g-3">
+        <div class="col-md-8">
+            <input type="text" name="roleName" class="form-control" placeholder="Enter role name" required />
+        </div>
+        <div class="col-md-4">
+            <button type="submit" class="btn btn-dark w-100">Create Role</button>
+        </div>
+    </form>
+</div>
+
+<div class="card shadow-sm p-4">
+    <h4 class="mb-3">Existing Roles</h4>
+
+    @if (!Model.Any())
+    {
+        <p>No roles found.</p>
+    }
+    else
+    {
+        <table class="table table-striped align-middle">
+            <thead>
+            <tr>
+                <th>Role Name</th>
+                <th style="width: 180px;">Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var role in Model)
+            {
+                <tr>
+                    <td>@role.Name</td>
+                    <td>
+                        @if (role.Name == "Admin")
+                        {
+                            <span class="text-muted">Protected role</span>
+                        }
+                        else
+                        {
+                            <form asp-action="Delete" method="post">
+                                <input type="hidden" name="id" value="@role.Id" />
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>

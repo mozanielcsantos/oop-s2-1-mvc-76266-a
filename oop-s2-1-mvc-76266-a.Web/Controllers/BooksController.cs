@@ -1,74 +1,139 @@
 using Library.Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using OopS21Mvc76266A.Web.Data;
+using oop_s2_1_mvc_76266_a.Web.Data;
 
-namespace OopS21Mvc76266A.Web.Controllers;
-
-public class BooksController : Controller
+namespace oop_s2_1_mvc_76266_a.Web.Controllers
 {
-    private readonly ApplicationDbContext _db;
-
-    public BooksController(ApplicationDbContext db)
+    [Authorize]
+    public class BooksController : Controller
     {
-        _db = db;
-    }
+        private readonly ApplicationDbContext _context;
 
-    // ---------------------------
-    // BOOKS LIST
-    // ---------------------------
-    public async Task<IActionResult> Index(
-        string searchTitle,
-        string searchAuthor,
-        string availability,
-        string sortOrder)
-    {
-        IQueryable<Book> query = _db.Books
-            .Include(b => b.Loans);
-
-        // ---------------------------
-        // SEARCH
-        // ---------------------------
-        if (!string.IsNullOrWhiteSpace(searchTitle))
+        public BooksController(ApplicationDbContext context)
         {
-            query = query.Where(b =>
-                b.Title.Contains(searchTitle));
+            _context = context;
         }
 
-        if (!string.IsNullOrWhiteSpace(searchAuthor))
+        public async Task<IActionResult> Index(string? search, string? category, string? availability)
         {
-            query = query.Where(b =>
-                b.Author.Contains(searchAuthor));
+            var query = _context.Books.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(b =>
+                    b.Title.Contains(search) ||
+                    b.Author.Contains(search));
+            }
+
+            if (!string.IsNullOrWhiteSpace(category))
+            {
+                query = query.Where(b => b.Category == category);
+            }
+
+            if (!string.IsNullOrWhiteSpace(availability))
+            {
+                if (availability == "Available")
+                {
+                    query = query.Where(b => b.IsAvailable);
+                }
+                else if (availability == "OnLoan")
+                {
+                    query = query.Where(b => !b.IsAvailable);
+                }
+            }
+
+            ViewBag.Categories = await _context.Books
+                .Select(b => b.Category)
+                .Distinct()
+                .OrderBy(c => c)
+                .ToListAsync();
+
+            ViewBag.Search = search;
+            ViewBag.SelectedCategory = category;
+            ViewBag.SelectedAvailability = availability;
+
+            var books = await query.OrderBy(b => b.Title).ToListAsync();
+            return View(books);
         }
 
-        // ---------------------------
-        // AVAILABILITY FILTER
-        // ---------------------------
-        if (availability == "available")
+        public IActionResult Create()
         {
-            query = query.Where(b =>
-                !b.Loans.Any(l => l.ReturnDate == null));
+            return View(new Book());
         }
 
-        if (availability == "onloan")
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(Book book)
         {
-            query = query.Where(b =>
-                b.Loans.Any(l => l.ReturnDate == null));
+            if (!ModelState.IsValid)
+            {
+                return View(book);
+            }
+
+            book.IsAvailable = true;
+            _context.Books.Add(book);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
 
-        // ---------------------------
-        // SORTING
-        // ---------------------------
-        query = sortOrder switch
+        public async Task<IActionResult> Edit(int id)
         {
-            "title_desc" => query.OrderByDescending(b => b.Title),
-            "author" => query.OrderBy(b => b.Author),
-            "author_desc" => query.OrderByDescending(b => b.Author),
-            _ => query.OrderBy(b => b.Title)
-        };
+            var book = await _context.Books.FindAsync(id);
 
-        var books = await query.ToListAsync();
+            if (book == null)
+            {
+                return NotFound();
+            }
 
-        return View(books);
+            return View(book);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, Book book)
+        {
+            if (id != book.Id)
+            {
+                return NotFound();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(book);
+            }
+
+            _context.Update(book);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        public async Task<IActionResult> Delete(int id)
+        {
+            var book = await _context.Books.FirstOrDefaultAsync(b => b.Id == id);
+
+            if (book == null)
+            {
+                return NotFound();
+            }
+
+            return View(book);
+        }
+
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var book = await _context.Books.FindAsync(id);
+
+            if (book != null)
+            {
+                _context.Books.Remove(book);
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
     }
 }

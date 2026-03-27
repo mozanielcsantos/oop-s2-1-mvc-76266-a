@@ -1,68 +1,137 @@
-using System.Linq;
-using System.Threading.Tasks;
+using Library.Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using OopS21Mvc76266A.Web.Data;
+using oop_s2_1_mvc_76266_a.Web.Data;
 using oop_s2_1_mvc_76266_a.Web.Models;
 
 namespace oop_s2_1_mvc_76266_a.Web.Controllers
 {
+    [Authorize]
     public class LoansController : Controller
     {
-        private readonly ApplicationDbContext _db;
+        private readonly ApplicationDbContext _context;
 
-        public LoansController(ApplicationDbContext db)
+        public LoansController(ApplicationDbContext context)
         {
-            _db = db;
+            _context = context;
         }
 
-        // GET: /Loans
-        public async Task<IActionResult> Index(string? status)
+        public async Task<IActionResult> Index()
         {
-            // status options (optional): "all", "active", "returned", "overdue"
-            var normalized = (status ?? "all").Trim().ToLower();
-
-            // Join tables explicitly so this works even if your Loan entity
-            // doesn't contain navigation properties like Loan.Book / Loan.Member.
-            var query =
-                from l in _db.Loans.AsNoTracking()
-                join b in _db.Books.AsNoTracking() on l.BookId equals b.Id
-                join m in _db.Members.AsNoTracking() on l.MemberId equals m.Id
-                select new LoanListItemVm
+            var loans = await _context.Loans
+                .Include(l => l.Book)
+                .Include(l => l.Member)
+                .OrderByDescending(l => l.LoanDate)
+                .Select(l => new LoanListItemVm
                 {
-                    LoanId = l.Id,
-                    BookTitle = b.Title,
-                    BookIsbn = b.Isbn,
-                    MemberFullName = m.FullName,
-                    MemberEmail = m.Email,
+                    Id = l.Id,
+                    BookTitle = l.Book != null ? l.Book.Title : string.Empty,
+                    MemberName = l.Member != null ? l.Member.FullName : string.Empty,
                     LoanDate = l.LoanDate,
                     DueDate = l.DueDate,
-                    ReturnDate = l.ReturnDate
-                };
-
-            if (normalized == "active")
-            {
-                query = query.Where(x => x.ReturnDate == null);
-            }
-            else if (normalized == "returned")
-            {
-                query = query.Where(x => x.ReturnDate != null);
-            }
-            else if (normalized == "overdue")
-            {
-                // overdue = not returned AND due date in the past (UTC-based)
-                query = query.Where(x => x.ReturnDate == null && x.DueDate < System.DateTime.UtcNow);
-            }
-
-            var loans = await query
-                .OrderByDescending(x => x.LoanDate)
-                .ThenBy(x => x.BookTitle)
+                    ReturnedDate = l.ReturnedDate
+                })
                 .ToListAsync();
 
-            ViewData["Title"] = "Loans";
-            ViewData["Status"] = normalized;
-
             return View(loans);
+        }
+
+        public async Task<IActionResult> Create()
+        {
+            await LoadCreateDataAsync();
+            return View(new Loan
+            {
+                LoanDate = DateTime.Today,
+                DueDate = DateTime.Today.AddDays(14)
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(Loan loan)
+        {
+            var activeLoanExists = await _context.Loans
+                .AnyAsync(l => l.BookId == loan.BookId && l.ReturnedDate == null);
+
+            if (activeLoanExists)
+            {
+                ModelState.AddModelError(string.Empty, "This book is already on an active loan.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                await LoadCreateDataAsync();
+                return View(loan);
+            }
+
+            loan.ReturnedDate = null;
+
+            var book = await _context.Books.FindAsync(loan.BookId);
+            if (book != null)
+            {
+                book.IsAvailable = false;
+            }
+
+            _context.Loans.Add(loan);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        public async Task<IActionResult> Return(int id)
+        {
+            var loan = await _context.Loans
+                .Include(l => l.Book)
+                .Include(l => l.Member)
+                .FirstOrDefaultAsync(l => l.Id == id);
+
+            if (loan == null)
+            {
+                return NotFound();
+            }
+
+            return View(loan);
+        }
+
+        [HttpPost, ActionName("Return")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReturnConfirmed(int id)
+        {
+            var loan = await _context.Loans
+                .Include(l => l.Book)
+                .FirstOrDefaultAsync(l => l.Id == id);
+
+            if (loan == null)
+            {
+                return NotFound();
+            }
+
+            loan.ReturnedDate = DateTime.Today;
+
+            if (loan.Book != null)
+            {
+                loan.Book.IsAvailable = true;
+            }
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        private async Task LoadCreateDataAsync()
+        {
+            var availableBooks = await _context.Books
+                .Where(b => b.IsAvailable)
+                .OrderBy(b => b.Title)
+                .ToListAsync();
+
+            var members = await _context.Members
+                .OrderBy(m => m.FullName)
+                .ToListAsync();
+
+            ViewBag.BookId = new SelectList(availableBooks, "Id", "Title");
+            ViewBag.MemberId = new SelectList(members, "Id", "FullName");
         }
     }
 }
